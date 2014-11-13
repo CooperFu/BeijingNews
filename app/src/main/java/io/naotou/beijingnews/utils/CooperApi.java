@@ -5,6 +5,7 @@ package io.naotou.beijingnews.utils;
  * Have a nice day!
  */
 public class CooperApi {
-    public final static String BASE_URL = "http://192.168.13.41:8080/qbc";
-    public final static String NEWS_CENTER_CATEGORIES = BASE_URL + "/categories.json";
+    public final static String BASE_URL = "http://192.168.1.106:8080/web";
+    public final static String NEWS_CENTER_CATEGORIES = BASE_URL
+            + "/categories.json";
 }

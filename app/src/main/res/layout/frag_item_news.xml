@@ -4,14 +4,13 @@
     android:layout_height="match_parent"
     android:background="@color/white" >
 
-	<view
+	<ListView
         android:id="@+id/lv_item_news"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:cacheColorHint="@android:color/white"
         android:divider="@drawable/news_list_line"
         android:fadingEdge="none"
-        class="com.itheima40.zhbj.view.pullrefreshview.PullToRefreshListView" 
         android:scrollbars="none" />
 
 <!--     <include -->

@@ -4,7 +4,6 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.widget.BaseAdapter;
 import android.widget.FrameLayout;
 
 import com.google.gson.Gson;
@@ -28,6 +27,7 @@ import io.naotou.beijingnews.utils.SharedPreferencesUtils;
  * Have a nice day!
  */
 public class NewCenterPager extends BasePager {
+    private static final String TAG = "NewCenterPager";
     private List<String> titleList = new ArrayList<String>();
     private List<BasePager> pagerList;
     private FrameLayout news_center_fl;
@@ -74,15 +74,16 @@ public class NewCenterPager extends BasePager {
         pagerList = new ArrayList<BasePager>();
         pagerList.clear();
         pagerList.add(new NewPager(context,newCenter.data.get(0)));
-        pagerList.add(new TopicPager(context,newCenter.data.get(1)));
-        pagerList.add(new PicPager(context,newCenter.data.get(2)));
-        pagerList.add(new IntPager(context,newCenter.data.get(3)));
+        pagerList.add(new TopicPager(context, newCenter.data.get(1)));
+        pagerList.add(new PicPager(context, newCenter.data.get(2)));
+        pagerList.add(new IntPager(context, newCenter.data.get(3)));
 
         switchPager(0);
 
     }
 
     public void switchPager(int i) {
+
         txt_title.setText(titleList.get(i));
         news_center_fl.removeAllViews();
         news_center_fl.addView(pagerList.get(i).getRootView());
@@ -100,20 +101,16 @@ public class NewCenterPager extends BasePager {
             public void onSuccess(ResponseInfo<String> responseInfo) {
 
                 SharedPreferencesUtils.setStringData(context, CooperApi.NEWS_CENTER_CATEGORIES, responseInfo.result);
-                Log.d("onSuccess", responseInfo.result);
+                Log.d(TAG, responseInfo.result);
                 getDataFromLocal(responseInfo.result);
 
             }
 
-            /**
-             * @param e
-             * @param s
-             * 失败
-             */
+
             @Override
             public void onFailure(HttpException e, String s) {
 
-                Log.d("onFailure", s);
+                Log.d(TAG + "onFailure", s);
             }
         });
     }
