@@ -9,9 +9,9 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.lidroid.xutils.BitmapUtils;
 
@@ -37,18 +37,18 @@ public class RollViewPager extends ViewPager {
     private int moveX;
     private int moveY;
 
-    class RunnableTask implements Runnable{
+    private class RunnableTask implements Runnable {
 
         @Override
         public void run() {
             //维护让图片一致滚动的操作
-            currentPosition = (currentPosition+1)%imageUrlList.size();
+            currentPosition = (currentPosition + 1) % imageUrlList.size();
 
             handler.obtainMessage().sendToTarget();
         }
     }
 
-    private Handler handler = new Handler(){
+    private Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
 
@@ -57,7 +57,9 @@ public class RollViewPager extends ViewPager {
             startRoll();
         }
     };
+
     public RollViewPager(Context context, final List<View> dotList) {
+
         super(context);
         this.dotList = dotList;
         bitmapUtils = new BitmapUtils(context);
@@ -70,6 +72,7 @@ public class RollViewPager extends ViewPager {
 
             @Override
             public void onPageSelected(int position) {
+
                 top_news_title.setText(titleList.get(position));
                 for (int i = 0; i < imageUrlList.size(); i++) {
                     if (i == position) {
@@ -117,6 +120,7 @@ public class RollViewPager extends ViewPager {
     }
 
     public void initImage(List<String> imageUrlList) {
+
         this.imageUrlList = imageUrlList;
 
     }
@@ -130,7 +134,7 @@ public class RollViewPager extends ViewPager {
             adapter.notifyDataSetChanged();
         }
         //让图片滑动
-        handler.postDelayed(runnableTask,3000);
+        handler.postDelayed(runnableTask, 3000);
     }
 
     @Override
@@ -148,24 +152,31 @@ public class RollViewPager extends ViewPager {
                 moveY = (int) ev.getY();
                 if (Math.abs(moveY - downY) < Math.abs(moveX - downX)) {
                     //横向滑动.
-                    if (moveX - downX > 0 && getCurrentItem() == 0 ) {
+                    //不要打扰我滑动.
+                    handler.removeCallbacksAndMessages(null);
+                    if (moveX - downX > 0 && getCurrentItem() == 0) {
                         //说明在第一个的时候向左划
                         getParent().requestDisallowInterceptTouchEvent(false);//交给系统处理
-                    } else if(moveX-downX>0&& getCurrentItem()<getAdapter().getCount()-1) {
+                    } else if (moveX - downX > 0 && getCurrentItem() < getAdapter().getCount() - 1) {
                         //说明是向左划并且当前的点在自己需要处理的位置上
                         getParent().requestDisallowInterceptTouchEvent(true);
-                    }else if (moveX - downX < 0 && getCurrentItem() == getAdapter().getCount() - 1) {
+                    } else if (moveX - downX < 0 && getCurrentItem() == getAdapter().getCount() - 1) {
                         //说明在最后一个向右滑动 就进入下一个
                         getParent().requestDisallowInterceptTouchEvent(false);
-                    }else if (moveX - downX < 0 && getCurrentItem() < getAdapter().getCount() - 1) {
+                    } else if (moveX - downX < 0 && getCurrentItem() < getAdapter().getCount() - 1) {
                         //说明向右滑动,并且是想自己处理的地方
                         getParent().requestDisallowInterceptTouchEvent(true);
                     }
 
 
                 } else {
-                    //竖向滑动.
+                    //竖向滑动. 下拉刷新的逻辑应该在这里.
                 }
+                break;
+            case MotionEvent.ACTION_UP:
+                //当抬起的时候,继续轮播
+                currentPosition = getCurrentItem();
+                startRoll();
                 break;
         }
         return super.dispatchTouchEvent(ev);
@@ -181,7 +192,7 @@ public class RollViewPager extends ViewPager {
         @Override
         public boolean isViewFromObject(View view, Object object) {
 
-            return view==object;
+            return view == object;
         }
 
         @Override
@@ -189,14 +200,61 @@ public class RollViewPager extends ViewPager {
 
             View view = View.inflate(getContext(), R.layout.viewpager_item, null);
             ImageView imageView = (ImageView) view.findViewById(R.id.image);
-            bitmapUtils.display(imageView,imageUrlList.get(position));
+            bitmapUtils.display(imageView, imageUrlList.get(position));
             container.addView(view);
+            view.setOnTouchListener(new OnTouchListener() {
+
+                private long downTime;
+                private long upTime;
+                private int upY;
+                private int upX;
+                private int downY;
+                private int downX;
+
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            downX = (int) event.getX();
+                            downY = (int) event.getY();
+                            downTime = System.currentTimeMillis();
+                            //按下的时候 让所有的滑动都结束
+                            handler.removeCallbacksAndMessages(null);
+                            break;
+
+                        case MotionEvent.ACTION_UP:
+                            upX = (int) event.getX();
+                            upY = (int) event.getY();
+                            upTime = System.currentTimeMillis();
+                            if (upTime - downTime < 2000&&upX==downX) {
+                                //短按
+                                Toast.makeText(getContext(),"没按超过两秒",Toast.LENGTH_SHORT).show();
+                            }else if (upTime - downTime > 2000&&downX==upX) {
+                                //长按
+                                Toast.makeText(getContext(),"长按超过两秒",Toast.LENGTH_SHORT).show();
+                            }
+                            startRoll();
+
+                            break;
+                        case MotionEvent.ACTION_CANCEL:
+                            //如果取消的话, 继续当前轮播图
+                            currentPosition = getCurrentItem() ;
+                            startRoll();
+                            break;
+                    }
+
+
+                    return true;
+                }
+            });
             return view;
 
         }
 
         @Override
         public void destroyItem(ViewGroup container, int position, Object object) {
+
             container.removeView((View) object);
 
         }
