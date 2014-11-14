@@ -6,8 +6,10 @@ import android.os.Message;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -30,6 +32,10 @@ public class RollViewPager extends ViewPager {
     private MyAdapter adapter;
     private RunnableTask runnableTask;
     private int currentPosition = 0;
+    private int downX;
+    private int downY;
+    private int moveX;
+    private int moveY;
 
     class RunnableTask implements Runnable{
 
@@ -37,6 +43,7 @@ public class RollViewPager extends ViewPager {
         public void run() {
             //维护让图片一致滚动的操作
             currentPosition = (currentPosition+1)%imageUrlList.size();
+
             handler.obtainMessage().sendToTarget();
         }
     }
@@ -124,7 +131,44 @@ public class RollViewPager extends ViewPager {
         }
         //让图片滑动
         handler.postDelayed(runnableTask,3000);
+    }
 
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+
+        switch (ev.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                //按下的时候.
+                downX = (int) ev.getX();
+                downY = (int) ev.getY();
+                getParent().requestDisallowInterceptTouchEvent(true);
+                break;
+            case MotionEvent.ACTION_MOVE:
+                moveX = (int) ev.getX();
+                moveY = (int) ev.getY();
+                if (Math.abs(moveY - downY) < Math.abs(moveX - downX)) {
+                    //横向滑动.
+                    if (moveX - downX > 0 && getCurrentItem() == 0 ) {
+                        //说明在第一个的时候向左划
+                        getParent().requestDisallowInterceptTouchEvent(false);//交给系统处理
+                    } else if(moveX-downX>0&& getCurrentItem()<getAdapter().getCount()-1) {
+                        //说明是向左划并且当前的点在自己需要处理的位置上
+                        getParent().requestDisallowInterceptTouchEvent(true);
+                    }else if (moveX - downX < 0 && getCurrentItem() == getAdapter().getCount() - 1) {
+                        //说明在最后一个向右滑动 就进入下一个
+                        getParent().requestDisallowInterceptTouchEvent(false);
+                    }else if (moveX - downX < 0 && getCurrentItem() < getAdapter().getCount() - 1) {
+                        //说明向右滑动,并且是想自己处理的地方
+                        getParent().requestDisallowInterceptTouchEvent(true);
+                    }
+
+
+                } else {
+                    //竖向滑动.
+                }
+                break;
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     private class MyAdapter extends PagerAdapter {

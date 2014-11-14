@@ -88,6 +88,7 @@ public class NewCenterPager extends BasePager {
         news_center_fl.removeAllViews();
         news_center_fl.addView(pagerList.get(i).getRootView());
         pagerList.get(i).initData();
+
     }
 
 
